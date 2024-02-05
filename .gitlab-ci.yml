@@ -1,0 +1,27 @@
+stages:
+  - sync-with-upstream
+  - build
+  - test
+  - deploy
+  - .post
+
+sync-with-upstream:
+  stage: sync-with-upstream
+  script:
+    - |
+      apt-get update -y && apt-get install -y git
+      git config --global user.email "zhaojie.yin@vidoori.com"
+      git config --global user.name "Zhaojie Yin"
+      git remote add upstream https://github.com/vllm-project/vllm || true
+      git fetch upstream
+      git checkout $CI_COMMIT_BRANCH
+      git merge upstream/main --no-edit || (echo "Merge resulted in conflicts" && false)
+      echo "GITLAB_TOKEN: $GITLAB_TOKEN"
+      git config pull.rebase false
+      # Perform a git pull to fetch and merge remote changes
+      git pull origin $CI_COMMIT_BRANCH
+      git push "https://${CI_PROJECT_NAMESPACE}:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" $CI_COMMIT_BRANCH
+
+
+  only:
+    - source
